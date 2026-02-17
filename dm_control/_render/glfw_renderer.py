@@ -25,10 +25,11 @@ try:
 except (ImportError, IOError, OSError) as exc:
   raise ImportError from exc
 try:
-  glfw.init()
+  _is_initialized = glfw.init()
 except glfw.GLFWError as exc:
   raise ImportError from exc
-
+if not _is_initialized:
+  raise ImportError('GLFW failed to initialize.')
 
 class GLFWContext(base.ContextBase):
   """An OpenGL context backed by GLFW."""

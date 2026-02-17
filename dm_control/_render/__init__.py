@@ -70,6 +70,18 @@ _NO_RENDERER = (
 )
 
 
+def _import_with_env_restore(import_func):
+  """Runs backend import and restores PYOPENGL_PLATFORM on ImportError."""
+  old_pyopengl_platform = os.environ.get(constants.PYOPENGL_PLATFORM)
+  try:
+    return import_func()
+  except ImportError:
+    if old_pyopengl_platform is None:
+      os.environ.pop(constants.PYOPENGL_PLATFORM, None)
+    else:
+      os.environ[constants.PYOPENGL_PLATFORM] = old_pyopengl_platform
+    raise
+
 if BACKEND is not None:
   # If a backend was specified, try importing it and error if unsuccessful.
   import_func = None
@@ -87,7 +99,7 @@ if BACKEND is not None:
         .format(constants.MUJOCO_GL, sorted(all_names), BACKEND))
   logging.info('MUJOCO_GL=%s, attempting to import specified OpenGL backend.',
                BACKEND)
-  Renderer = import_func()
+  Renderer = _import_with_env_restore(import_func)
 else:
   logging.info('MUJOCO_GL is not set, so an OpenGL backend will be chosen '
                'automatically.')
@@ -95,7 +107,7 @@ else:
   # successful.
   for names, import_func in _ALL_RENDERERS:
     try:
-      Renderer = import_func()
+      Renderer = _import_with_env_restore(import_func)
       BACKEND = names[0]
       logging.info('Successfully imported OpenGL backend: %s', names[0])
       break

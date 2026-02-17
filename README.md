@@ -101,6 +101,10 @@ available in order render through `dm_control`.
     -   [`dm_control.viewer`] can only be used with GLFW.
     -   GLFW will not work on headless machines.
 
+*   On Windows, rendering is supported via GLFW. In PowerShell, set
+    `MUJOCO_GL=glfw` before importing `dm_control` to force the GLFW backend:
+    `$env:MUJOCO_GL="glfw"`.
+
 *   "Headless" hardware rendering (i.e. without a windowing system such as X11)
     requires [EXT_platform_device] support in the EGL driver. Recent Nvidia
     drivers support this. You will also need GLEW. On Debian and Ubuntu, this

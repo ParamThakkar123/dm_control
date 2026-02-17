@@ -32,4 +32,4 @@ try:
   # Internal analytics.
 except (IOError, OSError):
   logging.warning('mjbindings failed to import mjlib and other functions. '
-                  'libmujoco.so may not be accessible.')
+                  'The MuJoCo shared library may not be accessible.')

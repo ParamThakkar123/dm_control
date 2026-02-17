@@ -111,7 +111,7 @@ class BuildMJBindingsCommand(setuptools.Command):
       new_pythonpath = [cwd]
       if 'PYTHONPATH' in old_environ:
         new_pythonpath.append(old_environ['PYTHONPATH'])
-      os.environ['PYTHONPATH'] = ':'.join(new_pythonpath)
+      os.environ['PYTHONPATH'] = os.pathsep.join(new_pythonpath)
       subprocess.check_call(command)
     finally:
       os.environ = old_environ
