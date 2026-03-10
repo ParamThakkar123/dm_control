@@ -164,7 +164,7 @@ def find_data_files(package_dir, patterns, excludes=()):
 
 setup(
     name="dmc_windows",
-    version="1.0.37",
+    version="0.0.1",
     description="Continuous control environments and MuJoCo Python bindings.",
     long_description="""
 # `dm_control`: DeepMind Infrastructure for Physics-Based Simulation.
