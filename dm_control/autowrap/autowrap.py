@@ -40,6 +40,10 @@ Example usage:
 import collections
 import io
 import os
+import sys
+
+# Add the package root to sys.path to allow imports.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from absl import app
 from absl import flags
@@ -53,74 +57,78 @@ _MJXMACRO_H = "mjxmacro.h"
 FLAGS = flags.FLAGS
 
 flags.DEFINE_spaceseplist(
-    "header_paths", None,
-    "Space-separated list of paths to MuJoCo header files.")
+    "header_paths", None, "Space-separated list of paths to MuJoCo header files."
+)
 
-flags.DEFINE_string("output_dir", None,
-                    "Path to output directory for wrapper source files.")
+flags.DEFINE_string(
+    "output_dir", None, "Path to output directory for wrapper source files."
+)
 
 
 def main(unused_argv):
-  special_header_paths = {}
+    special_header_paths = {}
 
-  # Get the path to the mjmodel and mjxmacro header files.
-  # These header files need special handling.
-  for header in (_MJMODEL_H, _MJXMACRO_H):
-    for path in FLAGS.header_paths:
-      if path.endswith(header):
-        special_header_paths[header] = path
-        break
-    if header not in special_header_paths:
-      logging.fatal("List of inputs must contain a path to %s", header)
+    # Get the path to the mjmodel and mjxmacro header files.
+    # These header files need special handling.
+    for header in (_MJMODEL_H, _MJXMACRO_H):
+        for path in FLAGS.header_paths:
+            if path.endswith(header):
+                special_header_paths[header] = path
+                break
+        if header not in special_header_paths:
+            logging.fatal("List of inputs must contain a path to %s", header)
 
-  # Make sure mjmodel.h is parsed first, since it is included by other headers.
-  srcs = codegen_util.UniqueOrderedDict()
-  sorted_header_paths = sorted(FLAGS.header_paths)
-  sorted_header_paths.remove(special_header_paths[_MJMODEL_H])
-  sorted_header_paths.insert(0, special_header_paths[_MJMODEL_H])
-  for p in sorted_header_paths:
-    with io.open(p, "r", errors="ignore") as f:
-      srcs[p] = f.read()
+    # Make sure mjmodel.h is parsed first, since it is included by other headers.
+    srcs = codegen_util.UniqueOrderedDict()
+    sorted_header_paths = sorted(FLAGS.header_paths)
+    sorted_header_paths.remove(special_header_paths[_MJMODEL_H])
+    sorted_header_paths.insert(0, special_header_paths[_MJMODEL_H])
+    for p in sorted_header_paths:
+        with io.open(p, "r", errors="ignore") as f:
+            srcs[p] = f.read()
 
-  # consts_dict should be a codegen_util.UniqueOrderedDict.
-  # This is a temporary workaround due to the fact that the parser does not yet
-  # handle nested `#if define(predicate)` blocks, which results in some
-  # constants being parsed twice. We therefore can't enforce the uniqueness of
-  # the keys in `consts_dict`. As of MuJoCo v1.30 there is only a single problem
-  # block beginning on line 10 in mujoco.h, and a single constant is affected
-  # (MJAPI).
-  consts_dict = collections.OrderedDict()
+    # consts_dict should be a codegen_util.UniqueOrderedDict.
+    # This is a temporary workaround due to the fact that the parser does not yet
+    # handle nested `#if define(predicate)` blocks, which results in some
+    # constants being parsed twice. We therefore can't enforce the uniqueness of
+    # the keys in `consts_dict`. As of MuJoCo v1.30 there is only a single problem
+    # block beginning on line 10 in mujoco.h, and a single constant is affected
+    # (MJAPI).
+    consts_dict = collections.OrderedDict()
 
-  # These are commented in `mjdata.h` but have no macros in `mjxmacro.h`.
-  hints_dict = codegen_util.UniqueOrderedDict({"buffer": ("nbuffer",),
-                                               "stack": ("narena",)})
+    # These are commented in `mjdata.h` but have no macros in `mjxmacro.h`.
+    hints_dict = codegen_util.UniqueOrderedDict(
+        {"buffer": ("nbuffer",), "stack": ("narena",)}
+    )
 
-  parser = binding_generator.BindingGenerator(
-      consts_dict=consts_dict, hints_dict=hints_dict)
+    parser = binding_generator.BindingGenerator(
+        consts_dict=consts_dict, hints_dict=hints_dict
+    )
 
-  # Parse enums.
-  for pth, src in srcs.items():
-    if pth is not special_header_paths[_MJXMACRO_H]:
-      parser.parse_enums(src)
+    # Parse enums.
+    for pth, src in srcs.items():
+        if pth is not special_header_paths[_MJXMACRO_H]:
+            parser.parse_enums(src)
 
-  # Parse constants and type declarations.
-  for pth, src in srcs.items():
-    if pth is not special_header_paths[_MJXMACRO_H]:
-      parser.parse_consts_typedefs(src)
+    # Parse constants and type declarations.
+    for pth, src in srcs.items():
+        if pth is not special_header_paths[_MJXMACRO_H]:
+            parser.parse_consts_typedefs(src)
 
-  # Get shape hints from mjxmacro.h.
-  parser.parse_hints(srcs[special_header_paths[_MJXMACRO_H]])
+    # Get shape hints from mjxmacro.h.
+    parser.parse_hints(srcs[special_header_paths[_MJXMACRO_H]])
 
-  # Create the output directory if it doesn't already exist.
-  if not os.path.exists(FLAGS.output_dir):
-    os.makedirs(FLAGS.output_dir)
+    # Create the output directory if it doesn't already exist.
+    if not os.path.exists(FLAGS.output_dir):
+        os.makedirs(FLAGS.output_dir)
 
-  # Generate Python source files and write them to the output directory.
-  parser.write_consts(os.path.join(FLAGS.output_dir, "constants.py"))
-  parser.write_enums(os.path.join(FLAGS.output_dir, "enums.py"))
-  parser.write_index_dict(os.path.join(FLAGS.output_dir, "sizes.py"))
+    # Generate Python source files and write them to the output directory.
+    parser.write_consts(os.path.join(FLAGS.output_dir, "constants.py"))
+    parser.write_enums(os.path.join(FLAGS.output_dir, "enums.py"))
+    parser.write_index_dict(os.path.join(FLAGS.output_dir, "sizes.py"))
+
 
 if __name__ == "__main__":
-  flags.mark_flag_as_required("header_paths")
-  flags.mark_flag_as_required("output_dir")
-  app.run(main)
+    flags.mark_flag_as_required("header_paths")
+    flags.mark_flag_as_required("output_dir")
+    app.run(main)

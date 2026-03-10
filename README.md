@@ -1,4 +1,4 @@
-# `dm_control`: Google DeepMind Infrastructure for Physics-Based Simulation.
+# `dmc_windows`: Google DeepMind Infrastructure for Physics-Based Simulation.
 
 Google DeepMind's software stack for physics-based simulation and Reinforcement
 Learning environments, using MuJoCo physics.
@@ -52,26 +52,26 @@ If you use this package, please cite our accompanying [publication]:
 
 ## Installation
 
-Install `dm_control` from PyPI by running
+Install `dmc_windows` from PyPI by running
 
 ```sh
-pip install dm_control
+pip install dmc_windows
 ```
 
-> **Note**: **`dm_control` cannot be installed in "editable" mode** (i.e. `pip
+> **Note**: **`dmc_windows` cannot be installed in "editable" mode** (i.e. `pip
 > install -e`).
 >
-> While `dm_control` has been largely updated to use the pybind11-based bindings
+> While `dmc_windows` has been largely updated to use the pybind11-based bindings
 > provided via the `mujoco` package, at this time it still relies on some legacy
 > components that are automatically generated from MuJoCo header files in a way
-> that is incompatible with editable mode. Attempting to install `dm_control` in
+> that is incompatible with editable mode. Attempting to install `dmc_windows` in
 > editable mode will result in import errors like:
 >
 > ```
-> ImportError: cannot import name 'constants' from partially initialized module 'dm_control.mujoco.wrapper.mjbindings' ...
+> ImportError: cannot import name 'constants' from partially initialized module 'dmc_windows.mujoco.wrapper.mjbindings' ...
 > ```
 >
-> The solution is to `pip uninstall dm_control` and then reinstall it without
+> The solution is to `pip uninstall dmc_windows` and then reinstall it without
 > the `-e` flag.
 
 ## Versioning
@@ -82,7 +82,7 @@ Prior to version 1.0.0, the `dm_control` Python package was versioned `0.0.N`,
 where `N` was an internal revision number that increased by an arbitrary amount
 at every single Git commit.
 
-If you want to install an unreleased version of `dm_control` directly from our
+If you want to install an unreleased version of `dmc_windows` directly from our
 repository, you can do so by running `pip install
 git+https://github.com/google-deepmind/dm_control.git`.
 
@@ -109,7 +109,7 @@ available in order render through `dm_control`.
 *   Software rendering requires GLX and OSMesa. On Debian and Ubuntu these can
     be installed using `sudo apt-get install libgl1-mesa-glx libosmesa6`.
 
-By default, `dm_control` will attempt to use GLFW first, then EGL, then OSMesa.
+By default, `dmc_windows` will attempt to use GLFW first, then EGL, then OSMesa.
 You can also specify a particular backend to use by setting the `MUJOCO_GL=`
 environment variable to `"glfw"`, `"egl"`, or `"osmesa"`, respectively. When
 rendering with EGL, you can also specify which GPU to use for rendering by
