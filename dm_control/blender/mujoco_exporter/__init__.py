@@ -28,143 +28,143 @@ from . import mujoco_scene
 
 
 bl_info = {
-    'name': 'Export MuJoCo',
-    'author': 'The dm_control authors',
-    'version': (2, 0),
-    'blender': (3, 3, 1),
-    'location': 'File > Export > MuJoCo',
-    'warning': '',
-    'description': 'Export articulated MuJoCo model',
-    'doc_url': '',
-    'category': 'Import-Export',
+    "name": "Export MuJoCo",
+    "author": "The dm_control authors",
+    "version": (2, 0),
+    "blender": (3, 3, 1),
+    "location": "File > Export > MuJoCo",
+    "warning": "",
+    "description": "Export articulated MuJoCo model",
+    "doc_url": "",
+    "category": "Import-Export",
 }
 
 
 @contextlib.contextmanager
 def context_settings_cacher(context: bpy.types.Context):
-  """Preserves the pose of exported objects and the scene mode."""
-  # Cache the mode
-  prev_mode = context.mode
+    """Preserves the pose of exported objects and the scene mode."""
+    # Cache the mode
+    prev_mode = context.mode
 
-  # Set the Object mode required by the exporter
-  bpy.ops.object.mode_set(mode='OBJECT')
+    # Set the Object mode required by the exporter
+    bpy.ops.object.mode_set(mode="OBJECT")
 
-  # Set the armatures in their neutral pose
-  pose_positions = []
-  for o in context.scene.objects:
-    if o.type == 'ARMATURE':
-      pose_positions.append((o, o.data.pose_position))
-      o.data.pose_position = 'REST'
-  context.view_layer.update()
-
-  try:
-    yield
-  finally:
-    # Restore the poses.
-    for armature, pose_position in pose_positions:
-      armature.data.pose_position = pose_position
+    # Set the armatures in their neutral pose
+    pose_positions = []
+    for o in context.scene.objects:
+        if o.type == "ARMATURE":
+            pose_positions.append((o, o.data.pose_position))
+            o.data.pose_position = "REST"
     context.view_layer.update()
 
-    # Restore the mode
-    bpy.ops.object.mode_set(mode=prev_mode)
+    try:
+        yield
+    finally:
+        # Restore the poses.
+        for armature, pose_position in pose_positions:
+            armature.data.pose_position = pose_position
+        context.view_layer.update()
+
+        # Restore the mode
+        bpy.ops.object.mode_set(mode=prev_mode)
 
 
 def apply_scale():
-  bpy.ops.object.select_all(action='SELECT')
-  bpy.ops.object.transform_apply(location=False, scale=True, rotation=False)
-  bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.transform_apply(location=False, scale=True, rotation=False)
+    bpy.ops.object.select_all(action="DESELECT")
 
 
 class ExportMjcf(bpy.types.Operator, ExportHelper):
-  """Export to MJCF file format."""
+    """Export to MJCF file format."""
 
-  bl_idname = 'export_scene.mjcf'
-  bl_label = 'Export MJCF'
+    bl_idname = "export_scene.mjcf"
+    bl_label = "Export MJCF"
 
-  filename_ext = '.xml'
-  filter_glob = bpy.props.StringProperty(default='*.xml', options={'HIDDEN'})
+    filename_ext = ".xml"
+    filter_glob = bpy.props.StringProperty(default="*.xml", options={"HIDDEN"})
 
-  # Export settings
-  armature_freejoint: bpy.props.BoolProperty(
-      name='Armature freejoint',
-      description='Add a freejoint to armature body',
-      default=False,
-  )
-  apply_mesh_modifiers: bpy.props.BoolProperty(
-      name='Apply modifiers',
-      description='Apply mesh modifiers',
-      default=False,
-  )
-
-  def _export_mjcf(self, context: bpy.types.Context) -> None:
-    """Converts a Blender scene to Mujoco XML format."""
-    # Create a new XML document
-    xml_doc = minidom.Document()
-    mujoco = xml_doc.createElement('mujoco')
-    xml_doc.appendChild(mujoco)
-
-    # Create a list of blender objects, arranged according to their hierarchy,
-    # where parents precede the children.
-    blender_objects = blender_scene.map_blender_tree(
-        context, lambda o: o if o.is_visible else None
+    # Export settings
+    armature_freejoint: bpy.props.BoolProperty(
+        name="Armature freejoint",
+        description="Add a freejoint to armature body",
+        default=False,
     )
-    # Remove None entries that correspond to invisible objects.
-    blender_objects = [o for o in blender_objects if o]
-
-    export_settings = self.as_keywords()
-
-    # Build the scene tree
-    worldbody_el = mujoco_scene.export_to_xml(
-        doc=xml_doc,
-        objects=blender_objects,
-        armature_freejoint=export_settings['armature_freejoint'],
+    apply_mesh_modifiers: bpy.props.BoolProperty(
+        name="Apply modifiers",
+        description="Apply mesh modifiers",
+        default=False,
     )
-    mujoco.appendChild(worldbody_el)
 
-    # Build the asset tree
-    asset_el = mujoco_assets.export_to_xml(
-        doc=xml_doc,
-        objects=blender_objects,
-        folder=os.path.dirname(export_settings['filepath']),
-        apply_mesh_modifiers=export_settings['apply_mesh_modifiers'],
-    )
-    mujoco.appendChild(asset_el)
+    def _export_mjcf(self, context: bpy.types.Context) -> None:
+        """Converts a Blender scene to Mujoco XML format."""
+        # Create a new XML document
+        xml_doc = minidom.Document()
+        mujoco = xml_doc.createElement("mujoco")
+        xml_doc.appendChild(mujoco)
 
-    # Add compiler options that would allow to export small feature meshes.
-    compiler_el = xml_doc.createElement('compiler')
-    mujoco.appendChild(compiler_el)
-    compiler_el.setAttribute('boundmass', '1e-3')
-    compiler_el.setAttribute('boundinertia', '1e-9')
-    # TODO(b/266818670): support assets export into subdirectory
-    # compiler_el.setAttribute('meshdir', 'assets')
+        # Create a list of blender objects, arranged according to their hierarchy,
+        # where parents precede the children.
+        blender_objects = blender_scene.map_blender_tree(
+            context, lambda o: o if o.is_visible else None
+        )
+        # Remove None entries that correspond to invisible objects.
+        blender_objects = [o for o in blender_objects if o]
 
-    # Write the XML to a file.
-    with open(export_settings['filepath'], 'w') as file:
-      file.write(xml_doc.toprettyxml(indent='  '))
+        export_settings = self.as_keywords()
 
-  def execute(self, context: bpy.types.Context):
-    """Export the scene."""
-    with context_settings_cacher(context):
-      apply_scale()
-      self._export_mjcf(context)
+        # Build the scene tree
+        worldbody_el = mujoco_scene.export_to_xml(
+            doc=xml_doc,
+            objects=blender_objects,
+            armature_freejoint=export_settings["armature_freejoint"],
+        )
+        mujoco.appendChild(worldbody_el)
 
-    return {'FINISHED'}
+        # Build the asset tree
+        asset_el = mujoco_assets.export_to_xml(
+            doc=xml_doc,
+            objects=blender_objects,
+            folder=os.path.dirname(export_settings["filepath"]),
+            apply_mesh_modifiers=export_settings["apply_mesh_modifiers"],
+        )
+        mujoco.appendChild(asset_el)
+
+        # Add compiler options that would allow to export small feature meshes.
+        compiler_el = xml_doc.createElement("compiler")
+        mujoco.appendChild(compiler_el)
+        compiler_el.setAttribute("boundmass", "1e-3")
+        compiler_el.setAttribute("boundinertia", "1e-9")
+        # TODO(b/266818670): support assets export into subdirectory
+        # compiler_el.setAttribute('meshdir', 'assets')
+
+        # Write the XML to a file.
+        with open(export_settings["filepath"], "w") as file:
+            file.write(xml_doc.toprettyxml(indent="  "))
+
+    def execute(self, context: bpy.types.Context):
+        """Export the scene."""
+        with context_settings_cacher(context):
+            apply_scale()
+            self._export_mjcf(context)
+
+        return {"FINISHED"}
 
 
 def menu_func_export(self, context: bpy.types.Context):
-  del context
-  self.layout.operator(ExportMjcf.bl_idname, text='MuJoCo (.xml)')
+    del context
+    self.layout.operator(ExportMjcf.bl_idname, text="MuJoCo (.xml)")
 
 
 def register():
-  bpy.utils.register_class(ExportMjcf)
-  bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    bpy.utils.register_class(ExportMjcf)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
 def unregister():
-  bpy.utils.unregister_class(ExportMjcf)
-  bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    bpy.utils.unregister_class(ExportMjcf)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 
-if __name__ == '__main__':
-  register()
+if __name__ == "__main__":
+    register()
